@@ -4,9 +4,11 @@ from flask_socketio import SocketIO,send, emit
 #from model import User_lista, db
 import json
 #import pdb
+from flask_pymongo import PyMongo
 
 app = Flask(__name__)
 app.config.from_pyfile('config.cfg')
+mongo = PyMongo(app)
 
 #db = SQLAlchemy(app)
 socketio = SocketIO(app)
@@ -19,8 +21,19 @@ def saber_ip():
 	return ip
 
 
+@app.route('/producto/<id>',methods=['GET'])
+def index(id):
+	producto = mongo.db.producto.find_one_or_404({'codigo': id})
+	return render_template('index.html', 
+							pro = producto,
+							title = producto['title'],
+							link = producto['link_images'],
+							code = producto['codigo'] )
+
+
 """
 SOCKETS
+"""
 """
 @socketio.on("recibo")
 def handle_recibo(msg):
@@ -139,7 +152,7 @@ def cargar_db():
 		print list_videos.lista
 		#pdb.set_trace()
 	return 'se cargo'
-
+"""
 if __name__ == '__main__':
     socketio.run(app, debug=True)
 
