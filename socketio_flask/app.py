@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, g
+from flask import Flask, render_template, request, jsonify, g, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from flask_socketio import SocketIO,send, emit
 #from model import User_lista, db
@@ -21,6 +21,37 @@ def saber_ip():
 	return ip
 
 
+@app.route('/cargar_db',methods=['GET'])
+def cargar_db():
+	#compruebo y creo collection video
+	if (mongo.db.video.find({})):
+		#consulto si existe 0 = false, 1 = true
+		if(mongo.db.video.count({'_id': '1'})):
+			#si existe cambia la lista
+			lista = ['soy', 'la', 'nueva', 'lista2']
+			#obtengo datos de db, y cambio lista
+			mongo.db.video.replace_one({"_id":"1"}, {"lista":lista})
+		else:
+			# si no existe crea la lista
+			mongo.db.video.insert_one({"_id":"1"})
+			mongo.db.video.replace_one({"_id":"1"}, {"lista":["hello","world"]})
+	else:
+		mongo.db.create_collection("video")
+	#obtengo la lista actualizada
+	list_videos = mongo.db.video.find_one_or_404({'_id': '1'})
+	#retorno la lista actualizada
+	return json.dumps(list_videos["lista"])
+
+
+
+@app.route('/doy_json', methods=['GET'])
+def doy_json():
+    #obtiene lista y manda
+    lista_video = mongo.db.producto.find_one_or_404({'id': '1'})
+    print lista_video["lista"]
+    return lista_video["lista"]
+
+"""
 @app.route('/producto/<id>',methods=['GET'])
 def index(id):
 	producto = mongo.db.producto.find_one_or_404({'codigo': id})
@@ -29,7 +60,7 @@ def index(id):
 							title = producto['title'],
 							link = producto['link_images'],
 							code = producto['codigo'] )
-
+"""
 
 """
 SOCKETS
@@ -139,19 +170,6 @@ def hola():
 def hola2():
 	return render_template('hola2.html')
 
-@app.route('/cargar_db',methods=['GET', 'POST'])
-def cargar_db():
-	if request.method == 'POST':
-		lista = request.form.getlist('select_video')
-		list_videos = User_lista.query.get(1)
-		print list_videos.lista
-		list_videos.lista = json.dumps(lista)
-		db.session.merge(list_videos)
-		db.session.commit()
-		db.session.close()
-		print list_videos.lista
-		#pdb.set_trace()
-	return 'se cargo'
 """
 if __name__ == '__main__':
     socketio.run(app, debug=True)
